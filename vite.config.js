@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import { resolve } from 'path';
 
 export default defineConfig({
   // Root liegt im Projekt-Stammverzeichnis (index.html)
@@ -8,6 +9,12 @@ export default defineConfig({
   build: {
     outDir:     'dist',
     emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        dokumentation: resolve(__dirname, 'dokumentation.html'),
+      },
+    },
   },
 
   server: {
