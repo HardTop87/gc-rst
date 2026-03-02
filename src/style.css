@@ -1,0 +1,116 @@
+/* Tom Select muss VOR @tailwind importiert werden */
+@import 'tom-select/dist/css/tom-select.min.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Tom Select → DaisyUI-Look ──────────────────────────────────────── */
+.ts-wrapper {
+  width: 100%;
+}
+
+/* Wrapper im Fokus */
+.ts-wrapper.focus .ts-control,
+.ts-wrapper.single.input-active .ts-control {
+  @apply outline outline-2 outline-offset-2 outline-primary;
+  border-color: hsl(var(--p)) !important;
+}
+
+.ts-control {
+  @apply bg-base-100 border border-base-300 rounded-lg text-sm text-base-content
+         px-3 py-2 cursor-pointer shadow-none min-h-0 gap-1;
+  transition: border-color 0.15s, outline 0.15s;
+}
+
+.ts-control:hover {
+  @apply border-base-content/40;
+}
+
+/* Gewählter Wert */
+.ts-wrapper.single .ts-control .item {
+  @apply font-medium text-base-content text-sm;
+}
+
+/* Caret-Pfeil */
+.ts-wrapper.single:not(.no-arrow) .ts-control::after {
+  content: '';
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 5px solid hsl(var(--bc) / 0.5);
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+}
+
+/* Suchfeld */
+.ts-control input {
+  @apply text-sm text-base-content placeholder:text-base-content/30;
+  color: hsl(var(--bc)) !important;
+}
+
+/* Dropdown-Menü */
+.ts-dropdown {
+  @apply bg-base-100 border border-base-300 rounded-xl shadow-xl mt-1 text-sm;
+  z-index: 9999;
+}
+
+.ts-dropdown .ts-dropdown-content {
+  @apply p-1 max-h-60 overflow-y-auto;
+}
+
+/* Einzelne Option */
+.ts-dropdown .option {
+  @apply rounded-lg px-3 py-2 text-sm text-base-content cursor-pointer transition-colors;
+}
+
+.ts-dropdown .option:hover,
+.ts-dropdown .option.active {
+  @apply bg-primary/10 text-primary;
+}
+
+.ts-dropdown .option.selected {
+  @apply bg-primary text-primary-content font-medium;
+}
+
+/* Gruppen-Überschriften (falls genutzt) */
+.ts-dropdown .optgroup-header {
+  @apply text-xs font-bold uppercase tracking-widest text-base-content/40 px-3 pt-3 pb-1;
+}
+
+/* Kein Ergebnis */
+.ts-dropdown .no-results {
+  @apply text-base-content/40 text-xs italic px-3 py-2;
+}
+
+/* Kein Suchfeld bei Plain-Selects: Input unsichtbar aber im DOM (für Keyboard-Events) */
+.ts-no-search .ts-control input {
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+}
+
+/* ── Ergebnis-Grid: immer 3 Spalten auf großen Screens ─────────────────── */
+#results {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+/* Tabellen-Zellen in den Detail-Karten */
+.detail-label {
+  @apply text-base-content/50 text-xs whitespace-nowrap pr-4 py-0.5 align-top;
+}
+.detail-value {
+  @apply text-right font-semibold text-sm tabular-nums py-0.5;
+}
+.detail-sub {
+  @apply text-right text-xs text-base-content/40 italic py-0.5;
+}
+
+/* .hidden wird vom JS gesteuert */
+.hidden { display: none !important; }

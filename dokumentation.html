@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dokumentation · Kalkulator Rückstichheftung</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --c-bg: #f1f5f9; --c-surface: #ffffff; --c-border: #e2e8f0; --c-border-md: #cbd5e1;
+      --c-s900:#0f172a;--c-s800:#1e293b;--c-s700:#334155;--c-s600:#475569;--c-s500:#64748b;--c-s400:#94a3b8;--c-s100:#f1f5f9;--c-s50:#f8fafc;
+      --c-b700:#1d4ed8;--c-b600:#2563eb;--c-b100:#dbeafe;--c-b50:#eff6ff;--c-b800:#1e40af;
+      --c-g700:#15803d;--c-g600:#16a34a;--c-g100:#dcfce7;--c-g50:#f0fdf4;
+      --c-a700:#b45309;--c-a100:#fef3c7;--c-a50:#fffbeb;
+      --c-o700:#c2410c;--c-o100:#ffedd5;
+      --c-r700:#b91c1c;--c-r100:#fee2e2;
+      --c-p700:#6d28d9;--c-p100:#ede9fe;
+      --r:10px;--r-lg:16px;--r-sm:6px;
+      --font:"Segoe UI",system-ui,-apple-system,sans-serif;
+      --mono:"Cascadia Code","Fira Code","Consolas",monospace;
+    }
+    html{font-size:16px;scroll-behavior:smooth;}
+    body{font-family:var(--font);background:var(--c-bg);color:var(--c-s800);line-height:1.65;}
+    .topbar{background:var(--c-s900);color:#fff;padding:0 2rem;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 10px rgba(0,0,0,.4);}
+    .topbar-brand{display:flex;align-items:center;gap:.75rem;font-weight:700;font-size:1rem;}
+    .topbar-brand sub{font-size:.75rem;color:var(--c-s400);font-weight:400;margin-left:.2rem;}
+    .topbar-actions{display:flex;align-items:center;gap:.75rem;}
+    .btn-back{display:inline-flex;align-items:center;gap:.4rem;padding:.4rem 1rem;border-radius:var(--r-sm);border:1px solid var(--c-s600);color:#e2e8f0;text-decoration:none;font-size:.85rem;font-weight:500;transition:background .15s,border-color .15s;}
+    .btn-back:hover{background:var(--c-s700);border-color:var(--c-s400);}
+    .badge-proto{padding:.25rem .65rem;border-radius:99px;background:var(--c-a700);color:#fff;font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;}
+    .page{max-width:1120px;margin:0 auto;padding:2rem 1.5rem 5rem;display:flex;flex-direction:column;gap:2.25rem;}
+    .section-hd{display:flex;align-items:center;gap:.85rem;margin-bottom:1.1rem;}
+    .section-hd .ic{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .section-hd h2{font-size:1.25rem;font-weight:800;color:var(--c-s900);letter-spacing:-.02em;}
+    .section-hd p{font-size:.9rem;color:var(--c-s500);margin-top:.1rem;}
+    .card{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-lg);padding:1.6rem 2rem;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+    .card-flush{padding:0;overflow:hidden;}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#1a3558 100%);color:#fff;border-radius:var(--r-lg);padding:2.25rem 2.25rem 2rem;position:relative;overflow:hidden;}
+    .hero::after{content:"";position:absolute;right:-80px;top:-80px;width:280px;height:280px;border-radius:50%;background:rgba(255,255,255,.04);pointer-events:none;}
+    .hero .eyebrow{font-size:.78rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#93c5fd;margin-bottom:.5rem;}
+    .hero h1{font-size:1.9rem;font-weight:900;letter-spacing:-.025em;line-height:1.15;margin-bottom:.85rem;}
+    .hero .sub{font-size:1rem;color:#cbd5e1;max-width:720px;line-height:1.65;margin-bottom:1.4rem;}
+    .hero-pills{display:flex;flex-wrap:wrap;gap:.5rem;}
+    .hero-pill{display:inline-flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:99px;padding:.3rem .85rem;font-size:.82rem;color:#e2e8f0;}
+    .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;} .dot-g{background:#4ade80;} .dot-b{background:#60a5fa;} .dot-a{background:#fbbf24;}
+    .warn-box{display:flex;gap:1rem;background:var(--c-a50);border:1px solid #fcd34d;border-left:4px solid var(--c-a700);border-radius:var(--r);padding:1.1rem 1.4rem;}
+    .warn-box .ico{color:var(--c-a700);flex-shrink:0;margin-top:.2rem;}
+    .warn-box strong{color:var(--c-a700);display:block;font-size:.95rem;margin-bottom:.35rem;}
+    .warn-box p,.warn-box ul{font-size:.9rem;color:#78350f;line-height:1.6;}
+    .warn-box ul{padding-left:1.3rem;margin-top:.4rem;display:flex;flex-direction:column;gap:.25rem;}
+    .rt-table{width:100%;border-collapse:collapse;font-size:.9rem;}
+    .rt-table thead tr{background:var(--c-s800);color:#fff;}
+    .rt-table thead th{padding:.8rem 1.1rem;font-weight:600;font-size:.83rem;letter-spacing:.03em;text-align:left;}
+    .rt-table thead th:not(:first-child){text-align:center;}
+    .rt-table tbody tr{border-bottom:1px solid var(--c-s100);}
+    .rt-table tbody tr:hover{background:var(--c-s50);}
+    .rt-table tbody td{padding:.75rem 1.1rem;vertical-align:middle;}
+    .rt-table tbody td:not(:first-child){text-align:center;}
+    .fmt-name{font-weight:700;font-size:.95rem;color:var(--c-s900);}
+    .fmt-sub{font-size:.78rem;color:var(--c-s400);margin-top:.1rem;}
+    .chk{color:var(--c-g600);font-size:1.1rem;font-weight:700;} .crs{color:#d1d5db;font-size:1rem;}
+    .badge{display:inline-flex;align-items:center;padding:.22rem .65rem;border-radius:99px;font-size:.75rem;font-weight:600;}
+    .badge-all{background:var(--c-p100);color:var(--c-p700);} .badge-xonly{background:var(--c-r100);color:var(--c-r700);}
+    .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.1rem;}
+    @media(max-width:820px){.feat-grid{grid-template-columns:1fr;}}
+    .feat-card{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r);padding:1.4rem 1.6rem;display:flex;flex-direction:column;gap:.85rem;box-shadow:0 1px 3px rgba(0,0,0,.05);}
+    .feat-card-hd{display:flex;align-items:center;gap:.8rem;}
+    .feat-icon{width:42px;height:42px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .feat-card h3{font-size:1.05rem;font-weight:800;color:var(--c-s900);}
+    .feat-card ul{font-size:.9rem;color:var(--c-s600);padding-left:1.25rem;line-height:1.65;display:flex;flex-direction:column;gap:.3rem;}
+    .feat-card ul li::marker{color:var(--c-b600);}
+    .price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.1rem;margin-bottom:1rem;}
+    @media(max-width:820px){.price-grid{grid-template-columns:1fr;}}
+    .price-card{border-radius:var(--r);padding:1.25rem 1.4rem;border:1px solid transparent;}
+    .price-card.sra3{background:var(--c-b50);border-color:#bfdbfe;}
+    .price-card.sra4{background:var(--c-g50);border-color:#bbf7d0;}
+    .price-card.ban{background:var(--c-o100);border-color:#fed7aa;}
+    .price-card h4{font-size:.82rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.65rem;}
+    .price-card.sra3 h4{color:var(--c-b700);} .price-card.sra4 h4{color:var(--c-g700);} .price-card.ban h4{color:var(--c-o700);}
+    .price-row{display:flex;justify-content:space-between;align-items:baseline;padding:.32rem 0;border-bottom:1px dashed rgba(0,0,0,.08);font-size:.92rem;}
+    .price-row:last-of-type{border-bottom:none;}
+    .price-row .lbl{color:var(--c-s700);} .price-row .val{font-family:var(--mono);font-weight:700;font-size:.95rem;}
+    .price-card.sra3 .val{color:var(--c-b700);} .price-card.sra4 .val{color:var(--c-g700);} .price-card.ban .val{color:var(--c-o700);}
+    .price-note{font-size:.83rem;color:var(--c-s500);margin-top:.65rem;padding-top:.55rem;border-top:1px solid rgba(0,0,0,.07);line-height:1.55;}
+    .inforow{display:flex;align-items:flex-start;gap:.65rem;padding:.7rem 1rem;border-radius:var(--r-sm);font-size:.9rem;line-height:1.55;margin-top:.5rem;}
+    .inforow svg{flex-shrink:0;margin-top:.15rem;}
+    .inforow.blue{background:var(--c-b50);color:var(--c-b800);} .inforow.green{background:var(--c-g50);color:var(--c-g700);} .inforow.amber{background:var(--c-a50);color:var(--c-a700);}
+    .flex-gap{display:flex;flex-direction:column;gap:.6rem;}
+    .tab-bar{display:flex;overflow-x:auto;border-bottom:2px solid var(--c-border);}
+    .tab-btn{padding:.8rem 1.6rem;font-size:.925rem;font-weight:600;color:var(--c-s500);background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer;white-space:nowrap;transition:color .15s,border-color .15s;}
+    .tab-btn:hover{color:var(--c-s800);}
+    .tab-btn.active{color:var(--c-b700);border-bottom-color:var(--c-b600);}
+    .tab-panel{display:none;padding:1.5rem 0 0;}
+    .tab-panel.active{display:block;}
+    .lim-sec{font-size:.83rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--c-s500);margin:1.5rem 0 .75rem;padding-bottom:.4rem;border-bottom:2px solid var(--c-border);}
+    .lim-sec:first-child{margin-top:0;}
+    .vo-table{width:100%;border-collapse:collapse;font-size:.9rem;}
+    .vo-table thead{background:var(--c-s700);}
+    .vo-table thead th{padding:.55rem .95rem;color:#fff;font-size:.82rem;font-weight:700;text-align:left;}
+    .vo-table thead th:last-child{text-align:right;}
+    .vo-table tbody tr{border-bottom:1px solid var(--c-s100);}
+    .vo-table tbody tr:hover{background:var(--c-s50);}
+    .vo-table tbody td{padding:.5rem .95rem;vertical-align:middle;font-size:.9rem;}
+    .vo-table td:last-child{text-align:right;font-family:var(--mono);font-weight:700;font-size:.95rem;}
+    .vo-table .cat-sep{background:var(--c-s100);}
+    .vo-table .cat-sep td{padding:.3rem .95rem;font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--c-s500);}
+    .paper-name{font-weight:600;color:var(--c-s900);} .paper-cat{font-size:.78rem;color:var(--c-s400);}
+    .v-top{color:#14532d;} .v-high{color:#166534;} .v-mid{color:#713f12;} .v-warn{color:#7c2d12;} .v-low{color:#7f1d1d;}
+    .mx-sub{font-size:.9rem;font-weight:700;color:var(--c-s700);margin:1.25rem 0 .5rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
+    .cat-bd{padding:.15rem .55rem;border-radius:99px;font-size:.74rem;font-weight:700;}
+    .cb-cc{background:var(--c-b100);color:var(--c-b700);} .cb-n{background:var(--c-g100);color:var(--c-g700);} .cb-bd{background:var(--c-p100);color:var(--c-p700);} .cb-r{background:#e0f2fe;color:#075985;}
+    .mx-wrap{overflow-x:auto;margin:.5rem 0 1rem;}
+    .mx-table{border-collapse:collapse;font-size:.86rem;white-space:nowrap;}
+    .mx-table th{padding:.5rem .7rem;font-size:.8rem;font-weight:700;}
+    .mx-table .corner{background:var(--c-s800);color:#fff;font-size:.73rem;font-weight:600;padding:.55rem .85rem;min-width:170px;}
+    .mx-table thead th:not(.corner){background:var(--c-s700);color:#fff;text-align:center;border-left:1px solid #475569;min-width:72px;}
+    .mx-table thead th .pn{display:block;font-weight:700;font-size:.82rem;}
+    .mx-table thead th .pc{display:block;font-size:.71rem;opacity:.75;}
+    .mx-table tbody tr:nth-child(even){background:var(--c-s50);}
+    .mx-table tbody th{background:var(--c-s100);color:var(--c-s700);text-align:left;border-right:2px solid var(--c-border-md);min-width:185px;}
+    .mx-table tbody th .pn{display:block;font-weight:700;font-size:.88rem;color:var(--c-s900);}
+    .mx-table tbody th .pc{display:block;font-size:.73rem;color:var(--c-s400);}
+    .mx-table td{text-align:center;border-left:1px solid #e2e8f0;font-family:var(--mono);font-weight:700;font-size:.92rem;padding:.42rem .55rem;}
+    .mx-table tr{border-bottom:1px solid var(--c-border);}
+    td.lv-top{background:#bbf7d0;color:#14532d;} td.lv-high{background:#dcfce7;color:#166534;}
+    td.lv-mid{background:#fef9c3;color:#713f12;} td.lv-warn{background:#fed7aa;color:#7c2d12;}
+    td.lv-low{background:#fee2e2;color:#7f1d1d;}
+    .doc-footer{text-align:center;font-size:.83rem;color:var(--c-s400);border-top:1px solid var(--c-border);padding-top:1.75rem;margin-top:1rem;}
+    .doc-footer a{color:var(--c-b600);text-decoration:none;}
+    .doc-footer a:hover{text-decoration:underline;}
+    code{font-family:var(--mono);font-size:.85em;background:var(--c-s100);padding:.1em .35em;border-radius:4px;color:var(--c-b700);}
+  </style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-brand">
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="9" y1="12" x2="21" y2="12"/></svg>
+    Kalkulator Rückstichheftung <sub>· Technische Dokumentation</sub>
+  </div>
+  <div class="topbar-actions">
+    <span class="badge-proto">Prototyp</span>
+    <a href="index.html" target="_blank" class="btn-back">
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      Zum Rechner
+    </a>
+  </div>
+</header>
+<main class="page">
+
+<div class="hero">
+  <p class="eyebrow">Management Summary · Internes Kalkulationstool · Stand März 2026</p>
+  <h1>Intelligenter Produktions-Router<br>für Rückstichheftung (RST)</h1>
+  <p class="sub">Dieses Tool berechnet in Echtzeit für jeden Auftrag alle technisch machbaren Produktionswege und ermittelt sofort den günstigsten — inklusive vollständiger Kostenaufschlüsselung nach Klick, Papier und Weiterverarbeitung.</p>
+  <div class="hero-pills">
+    <span class="hero-pill"><span class="dot dot-g"></span>Echtzeit-Kalkulation · 3 Routen parallel</span>
+    <span class="hero-pill"><span class="dot dot-b"></span>5 Endformate · 26 Papiersorten Standard</span>
+    <span class="hero-pill"><span class="dot dot-a"></span>Automatische Limit- &amp; Machbarkeitsprüfung</span>
+    <span class="hero-pill"><span class="dot dot-g"></span>Günstigster Weg wird automatisch hervorgehoben</span>
+  </div>
+</div>
+
+<div class="warn-box">
+  <svg class="ico" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  <div>
+    <strong>Hinweis: Funktionsfähiger Prototyp — folgende Basiswerte sind Demo-Platzhalter</strong>
+    <p>Die Berechnungslogik ist vollständig und technisch korrekt. Vor dem Produktiveinsatz bitte reale Vertragspreise hinterlegen:</p>
+    <ul>
+      <li><strong>Klickkosten SRA3</strong> (SW &amp; 4c) — aktuell Demo-Werte <strong>0,10 € / 0,20 €</strong> pro Klick/Seite. Dieser Wert gilt als Basis für alle Standard-Formate.</li>
+      <li><strong>A5 Hoch intern — Druck auf SRA4 statt SRA3:</strong> Ein SRA4-Bogen (225 × 320 mm) ist physisch halb so groß wie SRA3, weshalb beide Kostenpositionen halbiert werden:
+        <ul style="margin-top:.35rem;">
+          <li><strong>Klick-Faktor SRA4</strong> (aktuell 0,5) → resultiert in 0,05 € SW / 0,10 € 4c pro Klick statt der vollen SRA3-Preise</li>
+          <li><strong>Papier-Faktor SRA4</strong> (aktuell 1,0) → zusätzlicher Korrekturfaktor auf den bereits halbierten Bogenpreis; bei 1,0 kein weiterer Auf- oder Abschlag</li>
+        </ul>
+      </li>
+      <li><strong>Banner-Klick-Faktor</strong> (aktuell 2,0) — Aufschlag auf den SRA3-Basisklickpreis für das größere Banner-Druckformat, ausschließlich bei Partner ILDA</li>
+      <li><strong>Banner-Papierpreise</strong> (CC/BD/N Banner-Varianten) — Demo-Listenpreise, vor Produktiveinsatz durch reale Vertragspreise ersetzen</li>
+      <li><strong>Zuschläge Inhalt &amp; Umschlag</strong> — Weiterverarbeitungs-Faktoren der Partner, aktuell Demo-Werte</li>
+    </ul>
+  </div>
+</div>
+
+<section>
+  <div class="section-hd">
+    <div class="ic" style="background:var(--c-b100)"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--c-b700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg></div>
+    <div><h2>Routing-Matrix — Wer produziert was?</h2><p>Technische Freigaben je Produzent und Endformat · inkl. Bogenformat-Logik</p></div>
+  </div>
+  <div class="card card-flush">
+    <table class="rt-table">
+      <thead><tr><th>Format / Endprodukt</th><th>Intern (Inline KM)</th><th>Partner Kopp</th><th>Partner ILDA</th><th>Internes Bogenformat</th></tr></thead>
+      <tbody>
+        <tr><td><div class="fmt-name">A4 Hochformat</div><div class="fmt-sub">210 × 297 mm · 1 Nutzen SRA3 überall</div></td><td><span class="chk">✓</span></td><td><span class="chk">✓</span></td><td><span class="chk">✓</span></td><td><span class="badge badge-all">SRA3 · voller Klick &amp; Papierpreis</span></td></tr>
+        <tr><td><div class="fmt-name">A5 Hochformat</div><div class="fmt-sub">148 × 210 mm · 2 Nutzen SRA3 / 1 Nutzen SRA4 intern</div></td><td><span class="chk">✓</span></td><td><span class="chk">✓</span></td><td><span class="chk">✓</span></td><td><span class="badge" style="background:var(--c-g100);color:var(--c-g700)">SRA4 · halbe Klick- &amp; Papierkosten</span></td></tr>
+        <tr><td><div class="fmt-name">A5 Querformat</div><div class="fmt-sub">420 × 148 mm offen — passt nicht auf SRA4!</div></td><td><span class="chk">✓</span></td><td><span class="chk">✓</span></td><td><span class="chk">✓</span></td><td><span class="badge badge-all">SRA3 · voller Klick &amp; Papierpreis (kein SRA4)</span></td></tr>
+        <tr><td><div class="fmt-name">A4 Querformat (Banner)</div><div class="fmt-sub">297 × 210 mm · 1 Nutzen · Banner-Papiere</div></td><td><span class="crs">—</span></td><td><span class="crs">—</span></td><td><span class="chk">✓</span></td><td><span class="badge badge-xonly">Nur ILDA · Banner-Klickfaktor × 2,0</span></td></tr>
+        <tr><td><div class="fmt-name">30 × 30 cm (Banner)</div><div class="fmt-sub">300 × 300 mm · 1 Nutzen · Banner-Papiere</div></td><td><span class="crs">—</span></td><td><span class="crs">—</span></td><td><span class="chk">✓</span></td><td><span class="badge badge-xonly">Nur ILDA · Banner-Klickfaktor × 2,0</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="section-hd">
+    <div class="ic" style="background:var(--c-a100)"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--c-a700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+    <div><h2>Transparente Preis- &amp; Faktoren-Übersicht</h2><p>Mit diesen Parametern rechnet das Tool aktuell (Demo-Werte — vor Produktiveinsatz ersetzen)</p></div>
+  </div>
+  <div class="card">
+    <div class="price-grid">
+      <div class="price-card sra3">
+        <h4>Basis: SRA3-Klickpreise</h4>
+        <div class="price-row"><span class="lbl">SW-Druck (1-farbig)</span><span class="val">0,10 €</span></div>
+        <div class="price-row"><span class="lbl">Farbdruck (4-farbig)</span><span class="val">0,20 €</span></div>
+        <p class="price-note">Gilt für alle Partner-Routen und intern bei A4 Hoch &amp; A5 Quer. Preis pro Klick = pro Bogenseite.</p>
+      </div>
+      <div class="price-card sra4">
+        <h4>Intern: SRA4-Abschlag (nur A5 Hoch)</h4>
+        <div class="price-row"><span class="lbl">Faktor Klick</span><span class="val">× 0,5</span></div>
+        <div class="price-row"><span class="lbl">Resultierend SW</span><span class="val">0,05 €</span></div>
+        <div class="price-row"><span class="lbl">Resultierend 4c</span><span class="val">0,10 €</span></div>
+        <p class="price-note">Papierpreis = halber SRA3-Preis (A5-Bogen = ½ SRA3). Gilt <strong>nur</strong> für A5 Hoch intern. A5 Quer intern = voller SRA3-Preis.</p>
+      </div>
+      <div class="price-card ban">
+        <h4>Banner: Klick-Aufschlag (nur ILDA)</h4>
+        <div class="price-row"><span class="lbl">Faktor Klick</span><span class="val">× 2,0</span></div>
+        <div class="price-row"><span class="lbl">Resultierend SW</span><span class="val">0,20 €</span></div>
+        <div class="price-row"><span class="lbl">Resultierend 4c</span><span class="val">0,40 €</span></div>
+        <p class="price-note">Banner-Papiere haben eigene (deutlich höhere) Listenpreise. Produktion ausschließlich über ILDA.</p>
+      </div>
+    </div>
+    <div class="flex-gap">
+      <div class="inforow blue">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span><strong>Papierkosten SRA4 (intern, A5 Hoch):</strong> Das Tool rechnet mit dem halben SRA3-Papierpreis, da ein SRA4-Bogen physisch halb so groß ist. Beispiel: 80g Natur (0,024 €/Bogen SRA3) → 0,012 €/Bogen SRA4. Der Faktor <code>dynFaktorPapierSRA4 = 1.0</code> ermöglicht eine zusätzliche manuelle Korrektur falls nötig.</span>
+      </div>
+      <div class="inforow green">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span><strong>Klickpreis-Logik:</strong> Klickpreis gilt pro Bogenseite (Vorder- oder Rückseite). Das Tool multipliziert daher mit Faktor 2 pro Bogen (<code>bogenAnzahl × 2 × klickPreis</code>). Umschlagdruck wird als eigenständiger Bogen mit separatem Klick &amp; Papierpreis berechnet.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-hd">
+    <div class="ic" style="background:var(--c-g100)"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--c-g700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+    <div><h2>Wie rechnet das Tool? — Die 3 Kern-Konzepte</h2><p>Technische Hintergründe der Kalkulationslogik</p></div>
+  </div>
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="feat-card-hd"><div class="feat-icon" style="background:var(--c-b100)"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--c-b700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div><h3>Nutzen &amp; Bogenformat</h3></div>
+      <ul><li><strong>Intern A5 Hoch:</strong> 1 Nutzen auf SRA4 → halbe Kosten</li><li><strong>Intern A5 Quer:</strong> 1 Nutzen auf SRA3 (offenes Maß 420×148 mm passt nicht auf SRA4) → voller Preis</li><li><strong>Partner Kopp/ILDA:</strong> A5 immer 2 Nutzen auf SRA3 → halbierte Bogenzahl</li><li><strong>A4 &amp; Banner:</strong> immer 1 Nutzen auf SRA3</li></ul>
+    </div>
+    <div class="feat-card">
+      <div class="feat-card-hd"><div class="feat-icon" style="background:var(--c-p100)"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--c-p700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div><h3>Bogenteile &amp; Umschlag</h3></div>
+      <ul><li><strong>Bogenteile</strong> = Seiten ÷ 4 (Grundgröße für WV-Preistabellen)</li><li>Umschlag zählt als <strong>+1 Bogenteil</strong> in der Partner-WV-Tabelle</li><li>Intern: Umschlag als eigenständiger Druckjob (eigene Papier- &amp; Klickkosten)</li><li>Papierkosten = Preis/Bogen × Auflage × Nutzen-Korrekturfaktor</li></ul>
+    </div>
+    <div class="feat-card">
+      <div class="feat-card-hd"><div class="feat-icon" style="background:var(--c-g100)"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--c-g700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div><h3>Sortenreinheit</h3></div>
+      <ul><li>Umschlag-Dropdown filtert sich automatisch nach Inhaltskategorie</li><li><strong>Bilderdruck-Inhalt</strong> → nur BD-Umschläge (170–350g)</li><li><strong>ColorCopy-Inhalt</strong> → nur CC-Umschläge (160–350g)</li><li><strong>Natur / Recycling</strong> → nur gleichartige Umschläge</li><li>Filterung in Echtzeit, ohne Neuladen</li></ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-hd">
+    <div class="ic" style="background:var(--c-r100)"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--c-r700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>
+    <div><h2>Technische Maschinen-Limits — Exakte Grenzwerte</h2><p>Maximale Seitenanzahl je Papier- &amp; Umschlag-Kombination · automatisch vom Tool geprüft</p></div>
+  </div>
+  <div class="card">
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="t1">A4 Hoch &amp; A5 Quer</button>
+      <button class="tab-btn" data-tab="t2">A5 Hochformat</button>
+      <button class="tab-btn" data-tab="t3">Banner (A4 Quer &amp; 30×30)</button>
+    </div>
+
+    <div class="tab-panel active" id="t1">
+      <div class="lim-sec">Ohne Umschlag</div>
+      <div class="mx-wrap"><table class="vo-table" style="max-width:580px"><thead><tr><th>Papiersorte</th><th>ID</th><th>Max. Seiten</th></tr></thead><tbody>
+        <tr class="cat-sep"><td colspan="3">ColorCopy</td></tr>
+        <tr><td><span class="paper-name">100g ColorCopy</span></td><td><span class="paper-cat">CC_100</span></td><td><span class="v-high">92</span></td></tr>
+        <tr><td><span class="paper-name">120g ColorCopy</span></td><td><span class="paper-cat">CC_120</span></td><td><span class="v-mid">76</span></td></tr>
+        <tr><td><span class="paper-name">160g ColorCopy</span></td><td><span class="paper-cat">CC_160</span></td><td><span class="v-warn">60</span></td></tr>
+        <tr class="cat-sep"><td colspan="3">Naturpapier</td></tr>
+        <tr><td><span class="paper-name">80g Natur</span></td><td><span class="paper-cat">N_80</span></td><td><span class="v-high">92</span></td></tr>
+        <tr><td><span class="paper-name">90g Natur</span></td><td><span class="paper-cat">N_90</span></td><td><span class="v-high">84</span></td></tr>
+        <tr><td><span class="paper-name">100g Natur</span></td><td><span class="paper-cat">N_100</span></td><td><span class="v-mid">76</span></td></tr>
+        <tr><td><span class="paper-name">120g Natur</span></td><td><span class="paper-cat">N_120</span></td><td><span class="v-warn">56</span></td></tr>
+        <tr class="cat-sep"><td colspan="3">Bilderdruck</td></tr>
+        <tr><td><span class="paper-name">115g Bilderdruck</span></td><td><span class="paper-cat">BD_115</span></td><td><span class="v-top">104</span></td></tr>
+        <tr><td><span class="paper-name">135g Bilderdruck</span></td><td><span class="paper-cat">BD_135</span></td><td><span class="v-high">84</span></td></tr>
+        <tr><td><span class="paper-name">150g Bilderdruck</span></td><td><span class="paper-cat">BD_150</span></td><td><span class="v-mid">72</span></td></tr>
+        <tr class="cat-sep"><td colspan="3">Recycling</td></tr>
+        <tr><td><span class="paper-name">80g Recycling</span></td><td><span class="paper-cat">R_80</span></td><td><span class="v-top">96</span></td></tr>
+        <tr><td><span class="paper-name">100g Recycling</span></td><td><span class="paper-cat">R_100</span></td><td><span class="v-mid">76</span></td></tr>
+      </tbody></table></div>
+      <div class="mx-sub">Mit Umschlag: <span class="cat-bd cb-cc">ColorCopy-Umschlag × CC-Inhalt</span></div>
+      <div class="mx-wrap"><table class="mx-table"><thead><tr><th class="corner">Umschlag ↓ · Inhalt →</th><th><span class="pn">100g CC</span><span class="pc">CC_100</span></th><th><span class="pn">120g CC</span><span class="pc">CC_120</span></th><th><span class="pn">160g CC</span><span class="pc">CC_160</span></th></tr></thead><tbody>
+        <tr><th><span class="pn">160g ColorCopy</span><span class="pc">CC_160</span></th><td data-v="88"></td><td data-v="72"></td><td data-v="56"></td></tr>
+        <tr><th><span class="pn">200g ColorCopy</span><span class="pc">CC_200</span></th><td data-v="84"></td><td data-v="72"></td><td data-v="52"></td></tr>
+        <tr><th><span class="pn">250g ColorCopy</span><span class="pc">CC_250</span></th><td data-v="84"></td><td data-v="68"></td><td data-v="52"></td></tr>
+        <tr><th><span class="pn">300g ColorCopy</span><span class="pc">CC_300</span></th><td data-v="80"></td><td data-v="68"></td><td data-v="52"></td></tr>
+        <tr><th><span class="pn">350g ColorCopy</span><span class="pc">CC_350</span></th><td data-v="80"></td><td data-v="68"></td><td data-v="48"></td></tr>
+      </tbody></table></div>
+      <div class="mx-sub">Mit Umschlag: <span class="cat-bd cb-n">Natur-Umschlag × Natur-Inhalt</span></div>
+      <div class="mx-wrap"><table class="mx-table"><thead><tr><th class="corner">Umschlag ↓ · Inhalt →</th><th><span class="pn">80g N</span><span class="pc">N_80</span></th><th><span class="pn">90g N</span><span class="pc">N_90</span></th><th><span class="pn">100g N</span><span class="pc">N_100</span></th><th><span class="pn">120g N</span><span class="pc">N_120</span></th></tr></thead><tbody>
+        <tr><th><span class="pn">160g Natur</span><span class="pc">N_160</span></th><td data-v="84"></td><td data-v="76"></td><td data-v="68"></td><td data-v="52"></td></tr>
+        <tr><th><span class="pn">200g Natur</span><span class="pc">N_200</span></th><td data-v="84"></td><td data-v="72"></td><td data-v="68"></td><td data-v="48"></td></tr>
+        <tr><th><span class="pn">250g Natur</span><span class="pc">N_250</span></th><td data-v="80"></td><td data-v="72"></td><td data-v="64"></td><td data-v="48"></td></tr>
+        <tr><th><span class="pn">300g Natur</span><span class="pc">N_300</span></th><td data-v="76"></td><td data-v="68"></td><td data-v="64"></td><td data-v="48"></td></tr>
+      </tbody></table></div>
+      <div class="mx-sub">Mit Umschlag: <span class="cat-bd cb-bd">Bilderdruck-Umschlag × BD-Inhalt</span></div>
+      <div class="mx-wrap"><table class="mx-table"><thead><tr><th class="corner">Umschlag ↓ · Inhalt →</th><th><span class="pn">115g BD</span><span class="pc">BD_115</span></th><th><span class="pn">135g BD</span><span class="pc">BD_135</span></th><th><span class="pn">150g BD</span><span class="pc">BD_150</span></th></tr></thead><tbody>
+        <tr><th><span class="pn">170g Bilderdruck</span><span class="pc">BD_170</span></th><td data-v="96"></td><td data-v="80"></td><td data-v="68"></td></tr>
+        <tr><th><span class="pn">200g Bilderdruck</span><span class="pc">BD_200</span></th><td data-v="96"></td><td data-v="76"></td><td data-v="68"></td></tr>
+        <tr><th><span class="pn">250g Bilderdruck</span><span class="pc">BD_250</span></th><td data-v="92"></td><td data-v="76"></td><td data-v="68"></td></tr>
+        <tr><th><span class="pn">300g Bilderdruck</span><span class="pc">BD_300</span></th><td data-v="92"></td><td data-v="72"></td><td data-v="64"></td></tr>
+        <tr><th><span class="pn">350g Bilderdruck</span><span class="pc">BD_350</span></th><td data-v="88"></td><td data-v="72"></td><td data-v="64"></td></tr>
+      </tbody></table></div>
+      <div class="mx-sub">Mit Umschlag: <span class="cat-bd cb-r">Recycling-Umschlag × Recycling-Inhalt</span></div>
+      <div class="mx-wrap"><table class="mx-table"><thead><tr><th class="corner">Umschlag ↓ · Inhalt →</th><th><span class="pn">80g Recycling</span><span class="pc">R_80</span></th><th><span class="pn">100g Recycling</span><span class="pc">R_100</span></th></tr></thead><tbody>
+        <tr><th><span class="pn">300g Recycling</span><span class="pc">R_300</span></th><td data-v="80"></td><td data-v="64"></td></tr>
+      </tbody></table></div>
+    </div>
+
+    <div class="tab-panel" id="t2">
+
+      <div class="lim-sec">Ohne Umschlag</div>
+      <div class="mx-wrap"><table class="vo-table" style="max-width:560px"><thead><tr><th>Papiersorte</th><th>ID</th><th>Max. Seiten</th></tr></thead><tbody>
+        <tr class="cat-sep"><td colspan="3">ColorCopy</td></tr>
+        <tr><td><span class="paper-name">100g ColorCopy</span></td><td><span class="paper-cat">CC_100</span></td><td><span class="v-high">92</span></td></tr>
+        <tr><td><span class="paper-name">120g ColorCopy</span></td><td><span class="paper-cat">CC_120</span></td><td><span class="v-mid">76</span></td></tr>
+        <tr><td><span class="paper-name">160g ColorCopy</span></td><td><span class="paper-cat">CC_160</span></td><td><span class="v-warn">60</span></td></tr>
+        <tr class="cat-sep"><td colspan="3">Naturpapier</td></tr>
+        <tr><td><span class="paper-name">80g Natur</span></td><td><span class="paper-cat">N_80</span></td><td><span class="v-high">92</span></td></tr>
+        <tr><td><span class="paper-name">90g Natur</span></td><td><span class="paper-cat">N_90</span></td><td><span class="v-high">84</span></td></tr>
+        <tr><td><span class="paper-name">120g Natur</span></td><td><span class="paper-cat">N_120</span></td><td><span class="v-warn">56</span></td></tr>
+        <tr class="cat-sep"><td colspan="3">Bilderdruck</td></tr>
+        <tr><td><span class="paper-name">115g Bilderdruck</span></td><td><span class="paper-cat">BD_115</span></td><td><span class="v-top">104</span></td></tr>
+        <tr><td><span class="paper-name">135g Bilderdruck</span></td><td><span class="paper-cat">BD_135</span></td><td><span class="v-high">84</span></td></tr>
+        <tr><td><span class="paper-name">150g Bilderdruck</span></td><td><span class="paper-cat">BD_150</span></td><td><span class="v-mid">72</span></td></tr>
+        <tr class="cat-sep"><td colspan="3">Recycling</td></tr>
+        <tr><td><span class="paper-name">90g Recycling</span></td><td><span class="paper-cat">R_90</span></td><td><span class="v-high">84</span></td></tr>
+      </tbody></table></div>
+      <div class="mx-sub">Mit Umschlag: <span class="cat-bd cb-cc">ColorCopy-Umschlag × CC-Inhalt</span></div>
+      <div class="mx-wrap"><table class="mx-table"><thead><tr><th class="corner">Umschlag ↓ · Inhalt →</th><th><span class="pn">100g CC</span><span class="pc">CC_100</span></th><th><span class="pn">120g CC</span><span class="pc">CC_120</span></th><th><span class="pn">160g CC</span><span class="pc">CC_160</span></th></tr></thead><tbody>
+        <tr><th><span class="pn">160g ColorCopy</span><span class="pc">CC_160</span></th><td data-v="88"></td><td data-v="72"></td><td data-v="56"></td></tr>
+        <tr><th><span class="pn">250g ColorCopy</span><span class="pc">CC_250</span></th><td data-v="84"></td><td data-v="68"></td><td data-v="52"></td></tr>
+      </tbody></table></div>
+      <div class="mx-sub">Mit Umschlag: <span class="cat-bd cb-n">Natur-Umschlag × Natur-Inhalt</span></div>
+      <div class="mx-wrap"><table class="mx-table"><thead><tr><th class="corner">Umschlag ↓ · Inhalt →</th><th><span class="pn">80g N</span><span class="pc">N_80</span></th><th><span class="pn">90g N</span><span class="pc">N_90</span></th><th><span class="pn">120g N</span><span class="pc">N_120</span></th></tr></thead><tbody>
+        <tr><th><span class="pn">160g Natur</span><span class="pc">N_160</span></th><td data-v="84"></td><td data-v="76"></td><td data-v="52"></td></tr>
+        <tr><th><span class="pn">250g Natur</span><span class="pc">N_250</span></th><td data-v="80"></td><td data-v="72"></td><td data-v="48"></td></tr>
+      </tbody></table></div>
+      <div class="mx-sub">Mit Umschlag: <span class="cat-bd cb-bd">Bilderdruck-Umschlag × BD-Inhalt</span></div>
+      <div class="mx-wrap"><table class="mx-table"><thead><tr><th class="corner">Umschlag ↓ · Inhalt →</th><th><span class="pn">115g BD</span><span class="pc">BD_115</span></th><th><span class="pn">135g BD</span><span class="pc">BD_135</span></th><th><span class="pn">150g BD</span><span class="pc">BD_150</span></th></tr></thead><tbody>
+        <tr><th><span class="pn">170g Bilderdruck</span><span class="pc">BD_170</span></th><td data-v="96"></td><td data-v="80"></td><td data-v="68"></td></tr>
+        <tr><th><span class="pn">200g Bilderdruck</span><span class="pc">BD_200</span></th><td data-v="96"></td><td data-v="76"></td><td data-v="68"></td></tr>
+        <tr><th><span class="pn">250g Bilderdruck</span><span class="pc">BD_250</span></th><td data-v="96"></td><td data-v="76"></td><td data-v="68"></td></tr>
+        <tr><th><span class="pn">300g Bilderdruck</span><span class="pc">BD_300</span></th><td data-v="92"></td><td data-v="72"></td><td data-v="64"></td></tr>
+        <tr><th><span class="pn">350g Bilderdruck</span><span class="pc">BD_350</span></th><td data-v="92"></td><td data-v="72"></td><td data-v="64"></td></tr>
+      </tbody></table></div>
+      <div class="mx-sub">Mit Umschlag: <span class="cat-bd cb-r">Recycling-Umschlag × Recycling-Inhalt</span></div>
+      <div class="mx-wrap"><table class="mx-table"><thead><tr><th class="corner">Umschlag ↓ · Inhalt →</th><th><span class="pn">90g Recycling</span><span class="pc">R_90</span></th></tr></thead><tbody>
+        <tr><th><span class="pn">300g Recycling</span><span class="pc">R_300</span></th><td data-v="72"></td></tr>
+      </tbody></table></div>
+    </div>
+
+    <div class="tab-panel" id="t3">
+      <div class="inforow blue" style="margin-bottom:1rem;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>Banner-Formate ausschließlich über <strong>Partner ILDA</strong>. Spezielle Banner-Papiere mit eigenem Preiskatalog. Klick-Aufschlagfaktor × 2,0. Sortenreinheit gilt analog.</span>
+      </div>
+      <div class="lim-sec">Ohne Umschlag</div>
+      <div class="mx-wrap"><table class="vo-table" style="max-width:500px"><thead><tr><th>Papiersorte</th><th>ID</th><th>Max. Seiten</th></tr></thead><tbody>
+        <tr class="cat-sep"><td colspan="3">ColorCopy Banner</td></tr>
+        <tr><td><span class="paper-name">120g ColorCopy Banner</span></td><td><span class="paper-cat">CC_120_BAN</span></td><td><span class="v-mid">76</span></td></tr>
+        <tr><td><span class="paper-name">160g ColorCopy Banner</span></td><td><span class="paper-cat">CC_160_BAN</span></td><td><span class="v-warn">60</span></td></tr>
+        <tr class="cat-sep"><td colspan="3">Naturpapier Banner</td></tr>
+        <tr><td><span class="paper-name">100g Natur Banner</span></td><td><span class="paper-cat">N_100_BAN</span></td><td><span class="v-mid">76</span></td></tr>
+        <tr class="cat-sep"><td colspan="3">Bilderdruck Banner</td></tr>
+        <tr><td><span class="paper-name">135g Bilderdruck Banner</span></td><td><span class="paper-cat">BD_135_BAN</span></td><td><span class="v-high">84</span></td></tr>
+      </tbody></table></div>
+      <div class="mx-sub">Mit Umschlag: <span class="cat-bd cb-cc">ColorCopy Banner-Umschlag × CC-Banner-Inhalt</span></div>
+      <div class="mx-wrap"><table class="mx-table"><thead><tr><th class="corner">Umschlag ↓ · Inhalt →</th><th><span class="pn">120g CC</span><span class="pc">CC_120_BAN</span></th><th><span class="pn">160g CC</span><span class="pc">CC_160_BAN</span></th></tr></thead><tbody>
+        <tr><th><span class="pn">160g CC Banner</span><span class="pc">CC_160_BAN</span></th><td data-v="72"></td><td data-v="56"></td></tr>
+        <tr><th><span class="pn">250g CC Banner</span><span class="pc">CC_250_BAN</span></th><td data-v="68"></td><td data-v="52"></td></tr>
+        <tr><th><span class="pn">300g CC Banner</span><span class="pc">CC_300_BAN</span></th><td data-v="68"></td><td data-v="52"></td></tr>
+      </tbody></table></div>
+      <div class="mx-sub">Mit Umschlag: <span class="cat-bd cb-n">Natur Banner-Umschlag × Natur-Banner-Inhalt</span></div>
+      <div class="mx-wrap"><table class="mx-table"><thead><tr><th class="corner">Umschlag ↓ · Inhalt →</th><th><span class="pn">100g N</span><span class="pc">N_100_BAN</span></th></tr></thead><tbody>
+        <tr><th><span class="pn">250g Natur Banner</span><span class="pc">N_250_BAN</span></th><td data-v="64"></td></tr>
+        <tr><th><span class="pn">300g Natur Banner</span><span class="pc">N_300_BAN</span></th><td data-v="64"></td></tr>
+      </tbody></table></div>
+      <div class="mx-sub">Mit Umschlag: <span class="cat-bd cb-bd">Bilderdruck Banner-Umschlag × BD-Banner-Inhalt</span></div>
+      <div class="mx-wrap"><table class="mx-table"><thead><tr><th class="corner">Umschlag ↓ · Inhalt →</th><th><span class="pn">135g BD</span><span class="pc">BD_135_BAN</span></th></tr></thead><tbody>
+        <tr><th><span class="pn">170g Bilderdruck Ban.</span><span class="pc">BD_170_BAN</span></th><td data-v="80"></td></tr>
+        <tr><th><span class="pn">200g Bilderdruck Ban.</span><span class="pc">BD_200_BAN</span></th><td data-v="76"></td></tr>
+        <tr><th><span class="pn">250g Bilderdruck Ban.</span><span class="pc">BD_250_BAN</span></th><td data-v="76"></td></tr>
+        <tr><th><span class="pn">300g Bilderdruck Ban.</span><span class="pc">BD_300_BAN</span></th><td data-v="72"></td></tr>
+      </tbody></table></div>
+    </div>
+
+    <div class="flex-gap" style="margin-top:1.5rem;">
+      <div class="inforow green">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span><strong>Automatische Validierung:</strong> Überschreitet ein Auftrag das Maschinenlimit für die gewählte Kombination, markiert das Tool diese Route als „technisch nicht möglich“ — keine manuelle Prüfung nötig.</span>
+      </div>
+      <div class="inforow blue">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span><strong>Faustregel:</strong> Jede +20g Gewichtsstufe beim Inhaltspapier kostet ca. 4–12 Seiten Kapazität. Ein schwerer Umschlag (≥ 300g) reduziert zusätzlich um ca. 8–20 Seiten.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="doc-footer">
+  Kalkulator Rückstichheftung · Technische Dokumentation · Stand: März 2026 · Internes Dokument — nicht zur Weitergabe ·
+  <a href="index.html" target="_blank">Zum Rechner →</a>
+</footer>
+</main>
+<script>
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const t = btn.dataset.tab;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(t).classList.add('active');
+    });
+  });
+  document.querySelectorAll('td[data-v]').forEach(td => {
+    const v = +td.dataset.v;
+    td.textContent = v;
+    td.classList.add(v>=96?'lv-top':v>=80?'lv-high':v>=64?'lv-mid':v>=52?'lv-warn':'lv-low');
+  });
+</script>
+</body>
+</html>
