@@ -3,6 +3,7 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   // Root liegt im Projekt-Stammverzeichnis (index.html)
   root: '.',
+  base: '/gc-rst/',
 
   build: {
     outDir:     'dist',
