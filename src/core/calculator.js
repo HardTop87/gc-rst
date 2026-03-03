@@ -15,15 +15,15 @@
  * @property {boolean} hasUmschlag   - Ob ein Umschlag gedruckt wird
  * @property {string}  pUmschlagId   - Papier-ID Umschlag (nur wenn hasUmschlag)
  * @property {string}  dUmschlagKey  - "1c" | "4c" (nur wenn hasUmschlag)
+ * @property {string}  celloUmschlag - "ohne" | "glaenzend" | "matt" | "softtouch"
  *
  * @typedef {Object} Settings
- * @property {number} baseKlick1c          - Klickpreis SRA3 SW  (€/Seite)
- * @property {number} baseKlick4c          - Klickpreis SRA3 4c  (€/Seite)
- * @property {number} zInhalt              - Zuschuss/Makulatur Inhalt (Bögen)
- * @property {number} zUmschlag            - Zuschuss/Makulatur Umschlag (Bögen)
+ * @property {number} baseGrundpreis1c     - Grundpreis SRA3 SW (Wartungsklick + Abschreibung) in €/Seite
+ * @property {number} baseGrundpreis4c     - Grundpreis SRA3 4c (Wartungsklick + Abschreibung) in €/Seite
  * @property {number} dynFaktorBanner      - Klick-Multiplikator für Banner (default 2.0)
  * @property {number} dynFaktorKlickSRA4   - Klick-Multiplikator für SRA4  (default 0.5)
- * @property {number} dynFaktorPapierSRA4  - Papierpreis-Multiplikator SRA4 (default 1.0)
+ * @property {number} celloGrundkosten      - Grundkosten Cellophanierung pro Auftrag
+ * @property {number} setupKosten           - Einrichtekosten pro Auftrag (fix)
  *
  * @typedef {Object} RouteResult
  * @property {string}      name
@@ -40,6 +40,21 @@
  * @property {number}      [kostenKlickInhalt]
  * @property {number}      [kostenPapierUmschlag]
  * @property {number}      [kostenKlickUmschlag]
+ * @property {number}      [dbDruckInhalt]
+ * @property {number}      [dbDruckUmschlag]
+ * @property {number}      [dbPapierInhalt]
+ * @property {number}      [dbPapierUmschlag]
+ * @property {number}      [gewichtszuschlagInhalt]
+ * @property {number}      [gewichtszuschlagUmschlag]
+ * @property {number}      [makulaturInhalt]
+ * @property {number}      [makulaturUmschlag]
+ * @property {number}      [celloKosten]
+ * @property {number}      [celloGrundkosten]
+ * @property {number}      [celloBogenkosten]
+ * @property {number}      [celloGrundkostenFaktor]
+ * @property {number}      [celloStueckpreis]
+ * @property {string}      [celloType]
+ * @property {number}      [setupKosten]
  * @property {number}      [wvKosten]
  * @property {number}      [weightPerCopyG]     - Gewicht pro Stück in Gramm
  * @property {number}      [weightTotalKg]      - Gesamtgewicht der Auflage in Kilogramm
@@ -54,6 +69,7 @@ import {
   preise_ilda_mit,
   preise_ilda_ohne,
 } from '../config/prices.js';
+import { calcCelloCosts } from './cello.js';
 
 // ─── Internes Hilfsprogramm ───────────────────────────────────────────────────
 
@@ -73,6 +89,50 @@ function getPriceFromTable(table, bogenteile, auflage) {
   return null;
 }
 
+function calcDeckungsbeitragDruck(anzahlBogen) {
+  const n = Math.max(anzahlBogen, 1);
+  return 1.5 + 4 / Math.pow(n, 0.15);
+}
+
+function calcDeckungsbeitragPapier(anzahlBogen) {
+  const n = Math.max(anzahlBogen, 1);
+  return 1.3 + 0.75 / Math.pow(n, 0.2);
+}
+
+function calcMakulatur(anzahlBogen) {
+  const n = Math.max(anzahlBogen, 1);
+  const shifted = n + 190.4668326232;
+  const makulatur =
+    3 +
+    2.0092575059 / Math.pow(shifted, 0.08795607978) +
+    1097.938962524 / shifted;
+  return Math.ceil(makulatur);
+}
+
+function calcGewichtszuschlag(gsm) {
+  const staffel = [
+    { minGsm: 79, zuschlag: 0.0 },
+    { minGsm: 120, zuschlag: 0.003 },
+    { minGsm: 150, zuschlag: 0.006 },
+    { minGsm: 200, zuschlag: 0.01 },
+    { minGsm: 250, zuschlag: 0.013 },
+    { minGsm: 300, zuschlag: 0.018 },
+    { minGsm: 350, zuschlag: 0.028 },
+    { minGsm: 400, zuschlag: 0.038 },
+  ];
+
+  const grammatur = Math.max(gsm, 0);
+  let current = 0;
+
+  for (const step of staffel) {
+    if (grammatur >= step.minGsm) {
+      current = step.zuschlag;
+    }
+  }
+
+  return current;
+}
+
 // ─── Einzelrouten-Berechnung ─────────────────────────────────────────────────
 
 /**
@@ -89,13 +149,12 @@ function calcSingleRoute(name, isIntern, inputs, settings) {
   const {
     formatKey, auflage, seiten,
     pInhaltId, dInhaltKey,
-    hasUmschlag, pUmschlagId, dUmschlagKey,
+    hasUmschlag, pUmschlagId, dUmschlagKey, celloUmschlag,
   } = inputs;
 
   const {
-    baseKlick1c, baseKlick4c,
-    zInhalt, zUmschlag,
-    dynFaktorBanner, dynFaktorKlickSRA4, dynFaktorPapierSRA4,
+    baseGrundpreis1c, baseGrundpreis4c,
+    dynFaktorBanner, dynFaktorKlickSRA4, celloGrundkosten: celloGrundkostenSetting, setupKosten,
   } = settings;
 
   // ── Format-Freigabe prüfen ────────────────────────────────────────────────
@@ -111,12 +170,12 @@ function calcSingleRoute(name, isIntern, inputs, settings) {
   const pInhalt   = papiere.find(p => p.id === pInhaltId);
   const pUmschlag = hasUmschlag ? papiere.find(p => p.id === pUmschlagId) : null;
 
-  // ── Klickpreise SRA3 (dynamisch aus Settings) ─────────────────────────────
-  const klickSRA3 = { '1c': baseKlick1c, '4c': baseKlick4c };
+  // ── Grundpreise SRA3 (dynamisch aus Settings) ─────────────────────────────
+  const klickSRA3 = { '1c': baseGrundpreis1c, '4c': baseGrundpreis4c };
   // SRA4: halber Klickpreis per Faktor
   const klickSRA4 = {
-    '1c': baseKlick1c * dynFaktorKlickSRA4,
-    '4c': baseKlick4c * dynFaktorKlickSRA4,
+    '1c': baseGrundpreis1c * dynFaktorKlickSRA4,
+    '4c': baseGrundpreis4c * dynFaktorKlickSRA4,
   };
 
   // ── Format-abhängige Variablen bestimmen ──────────────────────────────────
@@ -139,10 +198,10 @@ function calcSingleRoute(name, isIntern, inputs, settings) {
 
     if (formatKey === 'A5_Hoch') {
       // ── A5 Hochformat: offenes Maß 210×297 mm → passt als 1 Nutzen auf SRA4 (225×320 mm).
-      //    Daher halbe Papier- und halbe Klickkosten via dynFaktorKlickSRA4 / dynFaktorPapierSRA4.
+      //    Daher halbe Papier- und halbe Klickkosten via dynFaktorKlickSRA4.
       formatName           = 'SRA4';
-      bogenPreisInhalt     = (pInhalt.price  / 2) * dynFaktorPapierSRA4;
-      bogenPreisUmschlag   = hasUmschlag ? (pUmschlag.price / 2) * dynFaktorPapierSRA4 : 0;
+      bogenPreisInhalt     = pInhalt.price  / 2;
+      bogenPreisUmschlag   = hasUmschlag ? pUmschlag.price / 2 : 0;
       currentKlickInhalt   = klickSRA4[dInhaltKey];
       currentKlickUmschlag = hasUmschlag ? klickSRA4[dUmschlagKey] : 0;
 
@@ -153,31 +212,67 @@ function calcSingleRoute(name, isIntern, inputs, settings) {
     // ── A4 Hochformat (210×297 mm intern): ebenfalls SRA3, voller Preis.
   }
 
-  // ── Bogenmengen (inkl. Zuschuss/Makulatur) ────────────────────────────────
-  const bogenInhalt   = Math.ceil((auflage * bogenteile) / nutzen) + zInhalt;
+  // ── Bogenmengen (inkl. dynamischer Makulatur) ─────────────────────────────
+  const nettoBogenInhalt = Math.ceil((auflage * bogenteile) / nutzen);
+  const makulaturInhalt  = calcMakulatur(nettoBogenInhalt);
+  const bogenInhalt      = nettoBogenInhalt + makulaturInhalt;
+
+  const dbDruckInhalt  = calcDeckungsbeitragDruck(nettoBogenInhalt);
+  const dbPapierInhalt = calcDeckungsbeitragPapier(nettoBogenInhalt);
+
   let   bogenUmschlag = 0;
+  let   makulaturUmschlag = 0;
+  let   nettoBogenUmschlag = 0;
+  let   dbDruckUmschlag = 0;
+  let   dbPapierUmschlag = 0;
   if (hasUmschlag) {
-    bogenUmschlag = Math.ceil(auflage / nutzen) + zUmschlag;
+    nettoBogenUmschlag = Math.ceil(auflage / nutzen);
+    makulaturUmschlag  = calcMakulatur(nettoBogenUmschlag);
+    bogenUmschlag      = nettoBogenUmschlag + makulaturUmschlag;
+    dbDruckUmschlag    = calcDeckungsbeitragDruck(nettoBogenUmschlag);
+    dbPapierUmschlag   = calcDeckungsbeitragPapier(nettoBogenUmschlag);
   }
 
   // ── Kosten: Papier & Klick ────────────────────────────────────────────────
-  const kostenPapierInhalt  = bogenInhalt  * bogenPreisInhalt;
-  const kostenKlickInhalt   = bogenInhalt  * 2 * currentKlickInhalt;   // 2 Seiten/Bogen
+  const gsmInhalt = parseInt(pInhaltId.split('_')[1]);
+  const gewichtszuschlagInhalt = calcGewichtszuschlag(gsmInhalt);
+  const klickpreisInhalt = (currentKlickInhalt + gewichtszuschlagInhalt) * dbDruckInhalt;
+
+  const kostenPapierInhalt  = bogenInhalt  * bogenPreisInhalt * dbPapierInhalt;
+  const kostenKlickInhalt   = bogenInhalt  * 2 * klickpreisInhalt;   // 2 Seiten/Bogen
 
   let kostenPapierUmschlag = 0;
   let kostenKlickUmschlag  = 0;
+  let gewichtszuschlagUmschlag = 0;
   if (hasUmschlag) {
-    kostenPapierUmschlag = bogenUmschlag * bogenPreisUmschlag;
-    kostenKlickUmschlag  = bogenUmschlag * 2 * currentKlickUmschlag;
+    const gsmUmschlag = parseInt(pUmschlagId.split('_')[1]);
+    gewichtszuschlagUmschlag = calcGewichtszuschlag(gsmUmschlag);
+    const klickpreisUmschlag = (currentKlickUmschlag + gewichtszuschlagUmschlag) * dbDruckUmschlag;
+    kostenPapierUmschlag = bogenUmschlag * bogenPreisUmschlag * dbPapierUmschlag;
+    kostenKlickUmschlag  = bogenUmschlag * 2 * klickpreisUmschlag;
   }
 
   const kostenPapierGesamt  = kostenPapierInhalt  + kostenPapierUmschlag;
   const kostenKlickGesamt   = kostenKlickInhalt   + kostenKlickUmschlag;
   const kostenDruckUndPapier = kostenPapierGesamt + kostenKlickGesamt;
 
+  const {
+    celloTypeEffektiv,
+    celloGrundkosten: celloGrundkostenCalc,
+    celloGrundkostenFaktor,
+    celloBogenkosten,
+    celloStueckpreis,
+    celloKostenGesamt,
+  } = calcCelloCosts({
+    hasUmschlag,
+    pUmschlag,
+    celloType: celloUmschlag,
+    bogenUmschlag,
+    grundkosten: celloGrundkostenSetting,
+  });
+
   // ── Gewicht ───────────────────────────────────────────────────────────────
   // g/m² direkt aus der Papier-ID lesen (z. B. "N_80" → 80, "BD_115" → 115)
-  const gsmInhalt   = parseInt(pInhaltId.split('_')[1]);
   const gsmUmschlag = hasUmschlag ? parseInt(pUmschlagId.split('_')[1]) : 0;
   const [openW, openH] = formatSettings.openMm;          // offenes Blattmaß in mm
   const sheetAreaM2   = (openW * openH) / 1_000_000;      // m²
@@ -243,7 +338,7 @@ function calcSingleRoute(name, isIntern, inputs, settings) {
     return { name, error: errorMsg };
   }
 
-  const gesamt     = kostenDruckUndPapier + wvKosten;
+  const gesamt     = kostenDruckUndPapier + wvKosten + celloKostenGesamt + setupKosten;
   const stueckPreis = gesamt / auflage;
 
   return {
@@ -261,6 +356,21 @@ function calcSingleRoute(name, isIntern, inputs, settings) {
     kostenKlickInhalt,
     kostenPapierUmschlag,
     kostenKlickUmschlag,
+    dbDruckInhalt,
+    dbDruckUmschlag,
+    dbPapierInhalt,
+    dbPapierUmschlag,
+    gewichtszuschlagInhalt,
+    gewichtszuschlagUmschlag,
+    makulaturInhalt,
+    makulaturUmschlag,
+    celloKosten: celloKostenGesamt,
+    celloGrundkosten: celloGrundkostenCalc,
+    celloBogenkosten,
+    celloGrundkostenFaktor,
+    celloStueckpreis,
+    celloType: celloTypeEffektiv,
+    setupKosten,
     wvKosten,
     weightPerCopyG,
     weightTotalKg,

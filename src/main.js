@@ -15,6 +15,7 @@ import { calculateAllRoutes } from './core/calculator.js';
 import {
   updateDropdowns,
   updateUmschlagDropdown,
+  updateCelloOptions,
   setUmschlagVisible,
   registerSelectListeners,
   readForm,
@@ -27,6 +28,7 @@ import {
 registerSelectListeners({
   onFormatChange: updateDropdowns,
   onInhaltChange: updateUmschlagDropdown,
+  onUmschlagPaperChange: updateCelloOptions,
 });
 
 // Nativer Checkbox-Listener (kein Tom Select)
@@ -45,7 +47,7 @@ document
 function handleCalculate() {
   const { inputs, settings } = readForm();
   const results              = calculateAllRoutes(inputs, settings);
-  renderResults(results);
+  renderResults(results, settings);
 }
 
 // ─── Initialisierung ─────────────────────────────────────────────────────────
